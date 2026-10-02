@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRÀ MI DƯỠNG SINH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Lora:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--nau:#6B4226;--xanh:#4F7942;--kem:#F5EFE3;--dong:#C9A24B;--chu:#2E2219;--vien:#E3D7C3;--trang:#fff}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Be Vietnam Pro",system-ui,sans-serif;background:var(--kem);color:var(--chu)}
+header{position:sticky;top:0;z-index:5;background:var(--nau);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-family:Lora,serif;font-size:20px;margin:0}
+header button{background:transparent;border:1px solid #fff8;color:#fff;border-radius:8px;padding:6px 10px;font:inherit;cursor:pointer}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.the{background:var(--trang);border:1px solid var(--vien);border-radius:14px;padding:16px;margin-bottom:16px}
+.the h2{font-family:Lora,serif;font-size:18px;margin:0 0 12px;color:var(--nau)}
+label{display:block;font-size:14px;font-weight:600;margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;font-size:15px;padding:10px;border:1px solid var(--vien);border-radius:10px;background:#FFFDF9;color:var(--chu)}
+textarea{min-height:90px;resize:vertical}
+.luoi2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.luoi4{display:grid;grid-template-columns:repeat(4,1fr);gap:0 8px}
+input[type=color]{height:42px;padding:3px}
+.nut{display:inline-block;background:var(--xanh);color:#fff;border:0;border-radius:10px;padding:12px 18px;font:inherit;font-weight:700;cursor:pointer;margin-top:12px}
+.nut.phu{background:var(--nau)}
+.nut.nhe{background:#fff;color:var(--nau);border:1px solid var(--vien);font-weight:600;padding:8px 12px;margin-top:8px}
+.nut:disabled{opacity:.5;cursor:wait}
+.nho{font-size:13px;color:#7a6a5a}
+#trangthai{margin:8px 0 0;font-size:14px;min-height:20px;color:var(--nau)}
+#ketqua{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.mau{background:#fff;border:1px solid var(--vien);border-radius:14px;padding:12px}
+.mau h3{margin:0 0 4px;font-size:16px;color:var(--nau)}
+.mau canvas{width:100%;height:auto;border-radius:8px;background:#eee8dc;display:block}
+.mau .tt{font-size:13px;color:#7a6a5a;min-height:18px;margin:6px 0}
+.mau details{margin-top:8px}
+.mau summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--xanh)}
+.hang{display:flex;gap:8px;flex-wrap:wrap}
+.an{display:none}
+.nut.tai{background:var(--nau);width:100%;margin-top:10px}
+#chanDungXem{max-height:120px;border-radius:10px;margin-top:6px}
+.chon{display:flex;align-items:center;gap:8px;font-weight:600;margin-top:12px}
+.chon input{width:auto}
+#logoXem{max-height:48px;margin-top:6px}
+@media (max-width:820px){#ketqua{grid-template-columns:1fr}.luoi4{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.luoi2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>TRÀ MI DƯỠNG SINH</h1>
+  <button id="moCaiDat">⚙ Cài đặt</button>
+</header>
+<main>
+
+<section class="the an" id="caiDat">
+  <h2>Cài đặt (lưu trên máy này)</h2>
+  <div id="oKey">
+    <label>API key Gemini</label>
+    <input id="apiKey" type="password" placeholder="Dán key lấy ở aistudio.google.com">
+    <p class="nho">Key chỉ lưu trong trình duyệt của máy này, không gửi đi đâu ngoài Google.</p>
+  </div>
+  <div class="luoi2">
+    <div><label>Tên tiệm</label><input id="tenTiem"></div>
+    <div><label>Câu khẩu hiệu</label><input id="slogan"></div>
+    <div><label>Số điện thoại / Zalo</label><input id="sdt"></div>
+    <div><label>Giờ mở cửa</label><input id="gio" placeholder="8:00 - 20:00"></div>
+  </div>
+  <label>Địa chỉ ngắn</label><input id="diaChi">
+  <label>Bộ màu gợi ý</label>
+  <select id="boMau">
+    <option value="">Giữ màu đang chọn</option>
+    <option value="#F5EFE3,#5A3A22,#4F7942,#B8612A">Mộc thảo dược: kem, nâu gỗ, lá, cam gừng (mặc định)</option>
+    <option value="#EEF3EA,#1F4A33,#5E8A4E,#C7782E">Lá xanh trong lành: xanh rêu, lá non, cam đất</option>
+    <option value="#F3F0E6,#1E4D48,#6B8A5C,#A9472F">Ngọc bích đông y: xanh ngọc, đỏ son nhạt</option>
+    <option value="#F8EDE7,#6E3532,#7D8F60,#B9704C">Hồng trà chăm sóc da: hồng đất, nâu đỏ, ô liu</option>
+    <option value="#2A211B,#F1E4CC,#A9B98C,#D2A048">Gỗ trầm sang trọng: nền tối, chữ kem, vàng đồng</option>
+  </select>
+  <p class="nho">Nền chiếm khoảng 60%, màu chính 30%, màu nhấn 10% (chỉ dùng cho giá, ưu đãi).</p>
+  <label>Màu nhận diện</label>
+  <div class="luoi4">
+    <div><span class="nho">Màu chính</span><input type="color" id="mauChinh" value="#5A3A22"></div>
+    <div><span class="nho">Màu phụ</span><input type="color" id="mauPhu" value="#4F7942"></div>
+    <div><span class="nho">Màu nền</span><input type="color" id="mauNen" value="#F5EFE3"></div>
+    <div><span class="nho">Màu nhấn</span><input type="color" id="mauNhan" value="#B8612A"></div>
+  </div>
+  <label>Logo (ảnh PNG nền trong, không bắt buộc)</label>
+  <input type="file" id="logo" accept="image/*">
+  <img id="logoXem" class="an" alt="">
+  <button class="nut nhe" id="xoaLogo" type="button">Bỏ logo</button>
+  <label>Ảnh chân dung chủ tiệm (không bắt buộc)</label>
+  <input type="file" id="chanDung" accept="image/*">
+  <p class="nho">Ảnh rõ mặt, đủ sáng, mặc đồng phục tiệm. Ảnh chỉ lưu trên máy này.</p>
+  <img id="chanDungXem" class="an" alt="">
+  <button class="nut nhe" id="xoaChanDung" type="button">Bỏ ảnh chân dung</button>
+  <label>Điều không thích (ảnh sẽ tránh)</label>
+  <input id="khongThich" placeholder="Ví dụ: không hoa sen, không màu tím">
+  <details>
+    <summary class="nho">Nâng cao: tên mô hình</summary>
+    <label>Mô hình chữ (cách nhau dấu phẩy, thử lần lượt)</label>
+    <input id="moHinhChu">
+    <label>Mô hình ảnh (cách nhau dấu phẩy, thử lần lượt)</label>
+    <input id="moHinhAnh">
+  </details>
+  <button class="nut" id="luuCaiDat">Lưu cài đặt</button>
+</section>
+
+<section class="the">
+  <h2>Nội dung cần làm ảnh</h2>
+  <textarea id="noiDung" placeholder="Ví dụ: Ưu đãi ngâm chân thảo dược gừng sả, giảm 20% đến hết 31/10, tặng trà gừng"></textarea>
+  <div class="luoi2">
+    <div>
+      <label>Loại ảnh</label>
+      <select id="loai">
+        <option value="tu-dong">Tự chọn theo nội dung</option>
+        <option value="gioi-thieu">Giới thiệu dịch vụ</option>
+        <option value="khuyen-mai">Khuyến mãi, combo</option>
+        <option value="kien-thuc">Mẹo, kiến thức sức khỏe</option>
+        <option value="thong-bao">Thông báo (nghỉ lễ, khai trương)</option>
+        <option value="bang-gia">Bảng giá ngắn</option>
+      </select>
+    </div>
+    <div>
+      <label>Khổ ảnh</label>
+      <select id="tiLe">
+        <option value="4:5">Bài Facebook, Zalo (4:5)</option>
+        <option value="1:1">Vuông (1:1)</option>
+        <option value="9:16">Story, TikTok (9:16)</option>
+        <option value="16:9">Ảnh bìa, banner (16:9)</option>
+      </select>
+    </div>
+  </div>
+  <label>Cách đưa chữ lên ảnh</label>
+  <select id="cheDoChu">
+    <option value="code">App in chữ (luôn đúng dấu, sửa chữ tức thì)</option>
+    <option value="ai">AI vẽ chữ (liền mạch hơn, có thể sai dấu)</option>
+  </select>
+  <label class="chon"><input type="checkbox" id="coChuTiem"> Đưa ảnh chủ tiệm vào poster</label>
+  <p class="nho" id="nhacChanDung">Cần thêm ảnh chân dung trong ⚙ Cài đặt trước.</p>
+  <label>Ảnh tham khảo (không bắt buộc)</label>
+  <input type="file" id="anhThamKhao" accept="image/*">
+  <select id="vaiTroAnh" style="margin-top:6px">
+    <option value="bo-cuc">Ảnh mẫu: chỉ học bố cục, màu</option>
+    <option value="that">Ảnh thật của tiệm / người: giữ nguyên chủ thể</option>
+  </select>
+  <label>Yêu cầu thêm</label>
+  <textarea id="yeuCau" style="min-height:60px" placeholder="Ví dụ: tông xanh lá nhẹ, không có người, chỉ cận cảnh bàn chân"></textarea>
+  <button class="nut" id="nutTao">Tạo 3 ảnh</button>
+  <p id="trangthai"></p>
+</section>
+
+<section id="ketqua"></section>
+
+<section class="the an" id="dieuChinhBo">
+  <h2>Điều chỉnh cả bộ</h2>
+  <textarea id="gopY" style="min-height:60px" placeholder="Ví dụ: chữ to hơn, bớt rối, đổi sang tông ấm, thêm hơi nước"></textarea>
+  <button class="nut phu" id="nutTaoLai">Tạo lại 3 ảnh theo góp ý</button>
+  <button class="nut" id="taiCa3" style="background:var(--nau)">⬇ Tải cả 3 ảnh</button>
+</section>
+
+</main>
+
+<script>
+const API = "https://generativelanguage.googleapis.com/v1beta/models/";
+const MO_HINH_CHU_MD = "gemini-3.8-flash, gemini-3-flash, gemini-2.5-flash";
+const MO_HINH_ANH_MD = "gemini-3.1-flash-image, gemini-3.1-flash-image-preview, gemini-3-pro-image, gemini-2.5-flash-image";
+const $ = id => document.getElementById(id);
+const O_CAI_DAT = ["apiKey","tenTiem","slogan","sdt","gio","diaChi","mauChinh","mauPhu","mauNen","mauNhan","khongThich","moHinhChu","moHinhAnh"];
+
+let cd = {};            // cài đặt
+let logoImg = null;     // ảnh logo
+let thamKhao = null;    // {mime, data}
+let chanDung = null;    // {mime, data}
+let boHienTai = [];     // 3 biến thể
+let lanTaoCuoi = null;  // tham số lần tạo gần nhất
+let moHinhAnhDung = null, kieuCauHinhDung = null, moHinhChuDung = null;
+
+/* ---------- Key: dùng key của AI Studio nếu có, không thì key nhập tay ---------- */
+function keyMoiTruong(){
+  try { if (typeof process !== "undefined" && process.env) return process.env.GEMINI_API_KEY || process.env.API_KEY || ""; } catch(e){}
+  return "";
+}
+function layKey(){ return keyMoiTruong() || cd.apiKey || ""; }
+
+/* ---------- Lưu trữ an toàn ---------- */
+function docLuu(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function ghiLuu(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+function napCaiDat(){
+  let luu = {};
+  try { luu = JSON.parse(docLuu("dsCaiDat") || "{}"); } catch(e){}
+  O_CAI_DAT.forEach(k => { if (luu[k] !== undefined) $(k).value = luu[k]; });
+  if (!$("moHinhChu").value) $("moHinhChu").value = MO_HINH_CHU_MD;
+  if (!$("moHinhAnh").value) $("moHinhAnh").value = MO_HINH_ANH_MD;
+  if (!$("tenTiem").value) $("tenTiem").value = "Mini home spa";
+  const cdg = docLuu("dsChanDung");
+  if (cdg) datChanDung(cdg);
+  const lg = docLuu("dsLogo");
+  if (lg) datLogo(lg);
+  docCaiDat();
+  if (keyMoiTruong()) $("oKey").classList.add("an");
+  if (!layKey() || !cd.tenTiem) $("caiDat").classList.remove("an");
+}
+function docCaiDat(){ O_CAI_DAT.forEach(k => cd[k] = $(k).value.trim()); }
+function luuCaiDat(){
+  docCaiDat();
+  ghiLuu("dsCaiDat", JSON.stringify(cd));
+  moHinhAnhDung = kieuCauHinhDung = moHinhChuDung = null;
+  baoTrangThai("Đã lưu cài đặt.");
+  $("caiDat").classList.add("an");
+  boHienTai.forEach((v,i)=>veMau(i));
+}
+function datLogo(src){
+  const im = new Image();
+  im.onload = () => { logoImg = im; $("logoXem").src = src; $("logoXem").classList.remove("an"); boHienTai.forEach((v,i)=>veMau(i)); };
+  im.src = src;
+}
+
+function datChanDung(u){
+  chanDung = u ? tachDataUrl(u) : null;
+  $("chanDungXem").src = u || ""; $("chanDungXem").classList.toggle("an", !u);
+  $("nhacChanDung").classList.toggle("an", !!u);
+  if (!u) $("coChuTiem").checked = false;
+}
+
+/* ---------- Đọc file ảnh ---------- */
+function docFile(file, maxCanh){
+  return new Promise((ok, loi) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        const tl = Math.min(1, maxCanh / Math.max(im.width, im.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(im.width*tl); c.height = Math.round(im.height*tl);
+        c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+        ok(c.toDataURL(file.type === "image/png" ? "image/png" : "image/jpeg", .9));
+      };
+      im.onerror = loi; im.src = r.result;
+    };
+    r.onerror = loi; r.readAsDataURL(file);
+  });
+}
+function tachDataUrl(u){ const m = u.match(/^data:(.*?);base64,(.*)$/); return {mime:m[1], data:m[2]}; }
+
+/* ---------- Gọi Gemini ---------- */
+async function goiGemini(moHinh, than){
+  const key = layKey();
+  if (!key) throw new Error("Chưa có API key. Bấm ⚙ Cài đặt để dán key.");
+  const r = await fetch(API + moHinh + ":generateContent", {
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-goog-api-key":key},
+    body:JSON.stringify(than)
+  });
+  const j = await r.json().catch(()=>({}));
+  if (!r.ok){
+    const e = new Error((j.error && j.error.message) || ("Lỗi " + r.status));
+    e.status = r.status; throw e;
+  }
+  return j;
+}
+function loiKhongCoMoHinh(e){ return e.status === 404 || /not found|not supported|is not available/i.test(e.message); }
+function loiCauHinh(e){ return e.status === 400 && /unknown name|invalid json|cannot find field|imageConfig|responseFormat|aspect/i.test(e.message); }
+function loiThanThien(e){
+  if (e.status === 429) return "Đã hết lượt gọi miễn phí trong lúc này. Đợi 1 phút rồi thử lại, hoặc bật thanh toán cho key.";
+  if (e.status === 403 || /API key/i.test(e.message)) return "API key không hợp lệ hoặc chưa bật Gemini API. Kiểm tra lại key trong Cài đặt.";
+  return e.message;
+}
+function danhSach(s){ return s.split(",").map(x=>x.trim()).filter(Boolean); }
+
+async function taoChu(heThong, nguoiDung){
+  const ds = moHinhChuDung ? [moHinhChuDung] : danhSach(cd.moHinhChu || MO_HINH_CHU_MD);
+  let loiCuoi;
+  for (const mh of ds){
+    try {
+      const j = await goiGemini(mh, {
+        systemInstruction:{parts:[{text:heThong}]},
+        contents:[{role:"user",parts:[{text:nguoiDung}]}],
+        generationConfig:{responseMimeType:"application/json", temperature:1}
+      });
+      moHinhChuDung = mh;
+      const t = (j.candidates?.[0]?.content?.parts || []).map(p=>p.text||"").join("");
+      return JSON.parse(t.replace(/^```json\s*|```$/g,""));
+    } catch(e){ loiCuoi = e; if (!loiKhongCoMoHinh(e)) throw e; }
+  }
+  throw loiCuoi;
+}
+
+const KIEU_CAU_HINH = [
+  tl => ({responseModalities:["TEXT","IMAGE"], imageConfig:{aspectRatio:tl}}),
+  tl => ({responseModalities:["TEXT","IMAGE"], responseFormat:{image:{aspectRatio:tl}}}),
+  tl => ({responseModalities:["TEXT","IMAGE"]})
+];
+async function taoAnh(parts, tiLe){
+  const dsMH = moHinhAnhDung ? [moHinhAnhDung] : danhSach(cd.moHinhAnh || MO_HINH_ANH_MD);
+  let loiCuoi;
+  for (const mh of dsMH){
+    const dsKieu = kieuCauHinhDung !== null ? [kieuCauHinhDung] : [0,1,2];
+    for (const k of dsKieu){
+      try {
+        const j = await goiGemini(mh, {contents:[{role:"user",parts}], generationConfig:KIEU_CAU_HINH[k](tiLe)});
+        const p = (j.candidates?.[0]?.content?.parts || []).find(x => x.inlineData || x.inline_data);
+        if (!p){
+          const ly = j.candidates?.[0]?.finishReason || j.promptFeedback?.blockReason || "không rõ";
+          throw Object.assign(new Error("Mô hình không trả ảnh (" + ly + "). Thử đổi nội dung hoặc bấm tạo lại."), {status:0});
+        }
+        moHinhAnhDung = mh; kieuCauHinhDung = k;
+        const d = p.inlineData || p.inline_data;
+        return "data:" + (d.mimeType || d.mime_type || "image/png") + ";base64," + d.data;
+      } catch(e){
+        loiCuoi = e;
+        if (loiCauHinh(e)) continue;
+        if (loiKhongCoMoHinh(e)) break;
+        throw e;
+      }
+    }
+  }
+  throw loiCuoi;
+}
+
+/* ---------- Hướng dẫn hệ thống (rút từ skill tao-anh-duong-sinh) ---------- */
+const HE_THONG = `Bạn là nhà thiết kế ảnh quảng bá cho tiệm massage dưỡng sinh đông y, chăm sóc sức khỏe và da ở miền Tây Việt Nam.
+Nhiệm vụ: từ nội dung người dùng, tạo ĐÚNG 3 phương án ảnh khác nhau rõ rệt (khác ít nhất 3 yếu tố: bố cục, cách đặt ảnh, ánh sáng, màu phụ, ý tưởng hình). Trả JSON đúng cấu trúc:
+{"bien_the":[{"ten_huong":"","y_tuong":"","bo_cuc":"trai|phai|tren|duoi|giua","canh_anh":"","kicker":"","tieu_de":"","phu_de":"","y_chinh":[""],"noi_bat":"","ghi_chu_nho":"","caption":""}]}
+
+Quy tắc chữ (tiếng Việt đủ dấu):
+- tieu_de: tên dịch vụ hoặc thông điệp chính, tối đa 6 chữ. Tên tiệm KHÔNG đặt ở tieu_de.
+- kicker: dòng nhỏ trên tiêu đề, tối đa 5 chữ (ví dụ "Ưu đãi tháng 10"), có thể để trống.
+- phu_de: tối đa 12 chữ, cụ thể (nguyên liệu, thời lượng, cảm giác).
+- y_chinh: 0 đến 4 ý, mỗi ý tối đa 8 chữ. Bảng giá thì mỗi ý dạng "Tên dịch vụ ...... giá".
+- noi_bat: giá hoặc ưu đãi đúng nguyên văn người dùng đưa; không có thì để trống.
+- ghi_chu_nho: hạn ưu đãi hoặc lưu ý ngắn; với ảnh nói về lợi ích sức khỏe thêm "Kết quả tùy cơ địa".
+- caption: 2 đến 4 câu ngắn, giọng gần gũi miền Tây, gọi khách là anh chị, tối đa 2 emoji, không dùng dấu gạch ngang dài.
+- TUYỆT ĐỐI không bịa giá, % giảm, ngày, số điện thoại, quà tặng, chứng nhận, lời khách hàng. Chỉ dùng dữ kiện người dùng đưa.
+- Cấm lời hứa chữa bệnh: chữa khỏi, trị dứt, trị tận gốc, hết bệnh, cam kết hiệu quả, 100%, thay thế thuốc, tốt nhất, số 1. Thay bằng cảm giác, trải nghiệm, nguyên liệu: "thư giãn vai gáy", "giúp cơ thể thả lỏng".
+- Ba phương án có thể dùng chữ hơi khác nhau nhưng giữ nguyên mọi dữ kiện.
+
+Quy tắc canh_anh (viết tiếng Anh, chỉ mô tả cảnh, KHÔNG nhắc chữ):
+- Cảnh chân thực, ấm, sạch, cao cấp: phòng trị liệu gỗ, rèm tre, cây xanh, khăn kem, thảo dược (gừng, sả, ngải cứu, lá bưởi, bồ kết), chậu gỗ ngâm chân, đá nóng, túi chườm, hơi nước.
+- Ưu tiên cận cảnh tay kỹ thuật viên, bàn chân, vai gáy, đạo cụ. Người mặc kín đáo hoặc đắp khăn kín, tư thế chuyên nghiệp.
+- Không kim châm, dụng cụ y khoa, vết bầm, máu, trẻ em được massage, người nổi tiếng.
+- Mỗi phương án một cảnh, góc máy hoặc ánh sáng khác nhau.
+
+bo_cuc: vị trí VÙNG CHỮ trên ảnh (trai = nửa trái, phai = nửa phải, tren = 1/3 trên, duoi = 1/3 dưới, giua = khung giữa). Ba phương án dùng ba bo_cuc khác nhau. Ảnh ngang 16:9 ưu tiên trai/phai; ảnh 9:16 ưu tiên tren/duoi.`;
+
+const VUNG_TRONG = {
+  trai:"Place the main subject on the right half of the frame. Keep the left half calm, softly blurred and free of objects so text can be added later.",
+  phai:"Place the main subject on the left half of the frame. Keep the right half calm, softly blurred and free of objects so text can be added later.",
+  tren:"Place the main subject in the lower 60% of the frame. Keep the top 40% calm, plain and free of objects so text can be added later.",
+  duoi:"Place the main subject in the upper 55% of the frame. Keep the bottom 45% calm, plain and free of objects so text can be added later.",
+  giua:"Arrange the scene around the edges of the frame, leaving a calm, plain central area for a text card."
+};
+
+function promptAnh(v, tiLe, cheDo, ghiChu){
+  const mau = `Color harmony (60-30-10 rule): about 60% of the image in soft ${cd.mauNen} background tones, about 30% in ${cd.mauChinh} and ${cd.mauPhu} (wood, herbs, towels, props), and only small touches of ${cd.mauNhan} as the accent that draws the eye. Low-saturation, natural colors; one clear focal point with the highest contrast; warm light against a few cool green herbal notes. No neon colors, no rainbow of many colors.`;
+  const tranh = `No nudity, no suggestive pose, no revealing clothing, no medical needles, no bruises, no blood, no watermark, no extra logos, no distorted hands, no extra fingers.${cd.khongThich ? " Also avoid: " + cd.khongThich + "." : ""}`;
+  let p = `Premium photorealistic image for a traditional Vietnamese herbal wellness and massage spa, aspect ratio ${tiLe}.
+Scene: ${v.canh_anh}
+Lighting: soft warm natural light, calm atmosphere, shallow depth of field. ${mau}
+${VUNG_TRONG[v.bo_cuc] || VUNG_TRONG.trai}
+`;
+  if (cheDo === "ai"){
+    const dong = [];
+    if (v.kicker) dong.push(`small label: "${v.kicker}"`);
+    dong.push(`headline (largest, elegant serif): "${v.tieu_de}"`);
+    if (v.phu_de) dong.push(`subline: "${v.phu_de}"`);
+    (v.y_chinh||[]).filter(Boolean).forEach(y => dong.push(`bullet: "${y}"`));
+    if (v.noi_bat) dong.push(`highlight in accent color, large: "${v.noi_bat}"`);
+    if (v.ghi_chu_nho) dong.push(`small note: "${v.ghi_chu_nho}"`);
+    const chan = [cd.tenTiem, cd.sdt ? "Zalo " + cd.sdt : "", cd.diaChi].filter(Boolean).join(" · ");
+    if (chan) dong.push(`footer, small: "${chan}"`);
+    p += `Design it as a finished poster. Put this Vietnamese text in the empty text area, exactly as written, with complete and correct Vietnamese diacritics, clean readable typography, no other text:
+${dong.join("\n")}
+`;
+  } else {
+    p += "No text, no letters, no numbers anywhere in the image.\n";
+  }
+  if (v.coChuTiem && chanDung){
+    p += "The FIRST attached photo is the real spa owner. Feature this exact woman in the scene: keep her face, facial features, age, skin tone and hairstyle recognizable and unchanged; do not beautify or reshape her face. She wears a neat, modest spa uniform, natural friendly expression, natural hands.\n";
+  }
+  if (thamKhao){
+    p += (v.coChuTiem && chanDung ? "The SECOND attached image: " : "") + thamKhao.vaiTro === "that"
+      ? "Use the attached photo as the real subject: keep the person, place or product recognizable and unchanged; restage only lighting and background to fit.\n"
+      : "Use the attached image only as a layout and mood reference. Do not copy its people, logos or text.\n";
+  }
+  if (ghiChu) p += "Extra instructions: " + ghiChu + "\n";
+  return p + tranh;
+}
+
+/* ---------- Vẽ chữ lên canvas ---------- */
+const KICH_THUOC = {"4:5":[1080,1350],"1:1":[1080,1080],"9:16":[1080,1920],"16:9":[1920,1080]};
+
+function hex2rgba(h,a){ const n=parseInt(h.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; }
+function doTuongPhan(a,b){
+  const L = h => { const n=parseInt(h.slice(1),16); return [n>>16&255,n>>8&255,n&255].map(x=>{x/=255;return x<=.03928?x/12.92:((x+.055)/1.055)**2.4;}).reduce((t,x,i)=>t+x*[.2126,.7152,.0722][i],0); };
+  const [x,y] = [L(a),L(b)].sort((m,n)=>n-m); return (x+.05)/(y+.05);
+}
+function chuTren(nen){ return doTuongPhan("#FFFFFF",nen) >= doTuongPhan("#2E2219",nen) ? "#FFFFFF" : "#2E2219"; }
+function doSang(h){ const n=parseInt(h.slice(1),16); return (0.299*(n>>16&255)+0.587*(n>>8&255)+0.114*(n&255))/255; }
+
+function catDong(ctx, chu, rong){
+  const tu = String(chu||"").split(/\s+/).filter(Boolean); const dong=[]; let d="";
+  for (const t of tu){ const thu = d ? d+" "+t : t; if (ctx.measureText(thu).width > rong && d){ dong.push(d); d=t; } else d=thu; }
+  if (d) dong.push(d); return dong;
+}
+
+function khoiChu(ctx, v, x, y, rong, can, ve, co){
+  // trả về chiều cao khối; ve=true thì vẽ thật
+  const mc = cd.mauChinh, mp = cd.mauPhu, mn = cd.mauNhan;
+  const chuToi = chuTren(cd.mauNen) === "#FFFFFF" ? "#F5EFE3" : "#2E2219";
+  let yy = y;
+  const ax = can === "center" ? x + rong/2 : x;
+  ctx.textAlign = can; ctx.textBaseline = "top";
+  if (v.kicker){
+    ctx.font = `600 ${Math.round(26*co)}px "Be Vietnam Pro"`; ctx.fillStyle = mp;
+    if (ve) ctx.fillText(v.kicker.toUpperCase(), ax, yy); yy += 40*co;
+  }
+  let s = 84*co, dongTD;
+  do { ctx.font = `700 ${Math.round(s)}px Lora`; dongTD = catDong(ctx, v.tieu_de, rong); s -= 4; } while (dongTD.length > 2 && s > 46*co);
+  ctx.fillStyle = mc;
+  for (const d of dongTD){ if (ve) ctx.fillText(d, ax, yy); yy += (s+4)*1.15; }
+  yy += 8*co;
+  if (v.phu_de){
+    ctx.font = `400 ${Math.round(32*co)}px "Be Vietnam Pro"`; ctx.fillStyle = chuToi;
+    for (const d of catDong(ctx, v.phu_de, rong)){ if (ve) ctx.fillText(d, ax, yy); yy += 44*co; }
+    yy += 10*co;
+  }
+  const ys = (v.y_chinh||[]).filter(Boolean);
+  if (ys.length){
+    ctx.font = `400 ${Math.round(29*co)}px "Be Vietnam Pro"`; ctx.fillStyle = chuToi;
+    for (const y1 of ys){
+      for (const [i,d] of catDong(ctx, (can==="center"?"":"•  ") + y1, rong).entries()){ if (ve) ctx.fillText((i&&can!=="center"?"    ":"")+d, ax, yy); yy += 42*co; }
+    }
+    yy += 10*co;
+  }
+  if (v.noi_bat){
+    ctx.font = `700 ${Math.round(44*co)}px "Be Vietnam Pro"`;
+    const dongNB = catDong(ctx, v.noi_bat, rong - 48*co);
+    const rongNB = Math.min(rong, Math.max(...dongNB.map(d=>ctx.measureText(d).width)) + 48*co);
+    const caoNB = dongNB.length*56*co + 24*co;
+    const bx = can === "center" ? x + (rong-rongNB)/2 : x;
+    if (ve){
+      ctx.fillStyle = mn; ctx.beginPath(); ctx.roundRect(bx, yy, rongNB, caoNB, 18*co); ctx.fill();
+      ctx.fillStyle = chuTren(mn); ctx.textAlign = "center";
+      dongNB.forEach((d,i)=>ctx.fillText(d, bx + rongNB/2, yy + 12*co + i*56*co));
+      ctx.textAlign = can;
+    }
+    yy += caoNB + 16*co;
+  }
+  if (v.ghi_chu_nho){
+    ctx.font = `italic 400 ${Math.round(22*co)}px "Be Vietnam Pro"`; ctx.fillStyle = chuToi; ctx.globalAlpha = .75;
+    for (const d of catDong(ctx, v.ghi_chu_nho, rong)){ if (ve) ctx.fillText(d, ax, yy); yy += 30*co; }
+    ctx.globalAlpha = 1;
+  }
+  return yy - y;
+}
+
+function veMau(i){
+  const v = boHienTai[i]; if (!v) return;
+  const cv = $("cv"+i); if (!cv) return;
+  const [W,H] = KICH_THUOC[v.tiLe] || KICH_THUOC["4:5"];
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext("2d");
+  ctx.fillStyle = cd.mauNen; ctx.fillRect(0,0,W,H);
+  if (v.img){
+    const tl = Math.max(W/v.img.width, H/v.img.height);
+    const w = v.img.width*tl, h = v.img.height*tl;
+    ctx.drawImage(v.img, (W-w)/2, (H-h)/2, w, h);
+  }
+  if (v.cheDo === "ai" && v.img) return;   // AI đã vẽ chữ
+  const co = Math.min(W,H)/1080;
+  const chanCao = 76*co;
+  const le = 64*co;
+  const bc = v.bo_cuc || "trai";
+  const nen = cd.mauNen;
+  let x, y, rong, can = "left";
+  if (bc === "trai" || bc === "phai"){
+    const g = bc==="trai" ? ctx.createLinearGradient(0,0,W*0.66,0) : ctx.createLinearGradient(W,0,W*0.34,0);
+    g.addColorStop(0, hex2rgba(nen,.94)); g.addColorStop(.55, hex2rgba(nen,.86)); g.addColorStop(.8, hex2rgba(nen,.45)); g.addColorStop(1, hex2rgba(nen,0));
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    rong = W*0.5 - le*1.2; x = bc==="trai" ? le : W*0.5 + le*0.2;
+    const cao = khoiChu(ctx, v, x, 0, rong, can, false, co);
+    y = Math.max(le*1.6, (H - chanCao - cao)/2);
+  } else if (bc === "tren"){
+    const g = ctx.createLinearGradient(0,0,0,H*0.62);
+    g.addColorStop(0, hex2rgba(nen,.95)); g.addColorStop(.65, hex2rgba(nen,.85)); g.addColorStop(1, hex2rgba(nen,0));
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    x = le; rong = W - le*2; y = le*1.6; can = W > H ? "left" : "center";
+  } else if (bc === "duoi"){
+    x = le; rong = W - le*2; can = W > H ? "left" : "center";
+    const cao = khoiChu(ctx, v, x, 0, rong, can, false, co);
+    y = H - chanCao - le*0.8 - cao;
+    const g = ctx.createLinearGradient(0,H,0,y - 120*co);
+    g.addColorStop(0, hex2rgba(nen,.96)); g.addColorStop(.7, hex2rgba(nen,.88)); g.addColorStop(1, hex2rgba(nen,0));
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  } else {
+    rong = Math.min(W*0.72, 900*co); x = (W-rong)/2; can = "center";
+    const cao = khoiChu(ctx, v, x, 0, rong, can, false, co);
+    y = (H - chanCao - cao)/2;
+    ctx.fillStyle = hex2rgba(nen,.92); ctx.beginPath(); ctx.roundRect(x-40*co, y-44*co, rong+80*co, cao+80*co, 28*co); ctx.fill();
+    ctx.strokeStyle = cd.mauNhan; ctx.lineWidth = 2*co; ctx.stroke();
+  }
+  khoiChu(ctx, v, x, y, rong, can, true, co);
+  // logo hoặc tên tiệm ở góc
+  const goc = (bc === "phai") ? W - le : le;
+  if (logoImg){
+    const lh = 96*co, lw = logoImg.width*lh/logoImg.height;
+    ctx.drawImage(logoImg, bc==="phai" ? goc - lw : goc, le*0.6, lw, lh);
+  }
+  // chân trang
+  ctx.fillStyle = cd.mauChinh; ctx.fillRect(0, H - chanCao, W, chanCao);
+  const chan = [cd.tenTiem, cd.sdt ? "Zalo " + cd.sdt : "", cd.diaChi].filter(Boolean).join("   ·   ");
+  ctx.fillStyle = chuTren(cd.mauChinh);
+  let fs = 28*co; ctx.font = `600 ${Math.round(fs)}px "Be Vietnam Pro"`;
+  while (ctx.measureText(chan).width > W - le*2 && fs > 16){ fs -= 1; ctx.font = `600 ${Math.round(fs)}px "Be Vietnam Pro"`; }
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(chan, W/2, H - chanCao/2);
+}
+
+/* ---------- Giao diện kết quả ---------- */
+function veThe(i){
+  const v = boHienTai[i];
+  const el = document.createElement("div"); el.className = "mau"; el.id = "the"+i;
+  el.innerHTML = `
+    <h3>Mẫu ${i+1}: <span class="tenHuong"></span></h3>
+    <div class="nho yTuong"></div>
+    <canvas id="cv${i}"></canvas>
+    <div class="tt" id="tt${i}">Đang tạo ảnh...</div>
+    <button class="nut tai" data-viec="tai" disabled>⬇ Tải ảnh ${i+1} về máy</button>
+    <div class="hang">
+      <button class="nut nhe" data-viec="caption">Chép caption</button>
+      <button class="nut nhe" data-viec="taoLai">Tạo lại mẫu này</button>
+    </div>
+    <details><summary>Sửa chữ trên ảnh</summary>
+      <label>Dòng nhỏ trên cùng</label><input data-truong="kicker">
+      <label>Tiêu đề</label><input data-truong="tieu_de">
+      <label>Phụ đề</label><input data-truong="phu_de">
+      <label>Các ý (mỗi dòng một ý)</label><textarea data-truong="y_chinh" style="min-height:70px"></textarea>
+      <label>Giá / ưu đãi nổi bật</label><input data-truong="noi_bat">
+      <label>Ghi chú nhỏ</label><input data-truong="ghi_chu_nho">
+      <label>Vị trí chữ</label>
+      <select data-truong="bo_cuc"><option value="trai">Bên trái</option><option value="phai">Bên phải</option><option value="tren">Phía trên</option><option value="duoi">Phía dưới</option><option value="giua">Khung giữa</option></select>
+      <button class="nut nhe an" data-viec="veChuAI">Vẽ lại ảnh với chữ mới</button>
+    </details>
+    <details><summary>Sửa ảnh theo ý muốn</summary>
+      <textarea data-viec-o="suaAnh" style="min-height:60px" placeholder="Ví dụ: thêm hơi nước, ánh sáng ấm hơn, bỏ chậu cây"></textarea>
+      <button class="nut nhe" data-viec="suaAnh">Sửa ảnh này</button>
+    </details>`;
+  el.querySelector(".tenHuong").textContent = v.ten_huong || "";
+  el.querySelector(".yTuong").textContent = v.y_tuong || "";
+  el.querySelectorAll("[data-truong]").forEach(o => {
+    const k = o.dataset.truong;
+    o.value = k === "y_chinh" ? (v.y_chinh||[]).join("\n") : (v[k] || "");
+    o.addEventListener("input", () => {
+      v[k] = k === "y_chinh" ? o.value.split("\n").map(s=>s.trim()).filter(Boolean) : o.value;
+      if (v.cheDo !== "ai") veMau(i);
+    });
+  });
+  if (v.cheDo === "ai") el.querySelector('[data-viec="veChuAI"]').classList.remove("an");
+  el.addEventListener("click", e => {
+    const b = e.target.closest("[data-viec]"); if (!b || b.tagName === "TEXTAREA") return;
+    xuLyNut(i, b.dataset.viec, el, b);
+  });
+  return el;
+}
+
+async function xuLyNut(i, viec, el, nut){
+  const v = boHienTai[i];
+  if (viec === "tai"){ taiAnh(i); return; }
+  if (viec === "caption"){
+    try { await navigator.clipboard.writeText(v.caption || ""); ttMau(i, "Đã chép caption."); }
+    catch(e){ prompt("Chép caption:", v.caption || ""); }
+    return;
+  }
+  if (viec === "taoLai" || viec === "veChuAI"){ await taoAnhMau(i, ""); return; }
+  if (viec === "suaAnh"){
+    const yc = el.querySelector('[data-viec-o="suaAnh"]').value.trim();
+    if (!yc){ ttMau(i, "Nhập điều muốn sửa trước."); return; }
+    if (!v.anhGoc){ await taoAnhMau(i, yc); return; }
+    nut.disabled = true; ttMau(i, "Đang sửa ảnh...");
+    try {
+      const g = tachDataUrl(v.anhGoc);
+      let lenh = `Edit this image: ${yc}. Keep the same composition, keep the empty text area empty, keep the same aspect ratio ${v.tiLe}.`;
+      if (v.cheDo === "ai") lenh = `Edit this poster: ${yc}. Keep all Vietnamese text exactly the same with correct diacritics unless asked to change it. Keep aspect ratio ${v.tiLe}.`;
+      const url = await taoAnh([{inlineData:{mimeType:g.mime, data:g.data}}, {text:lenh}], v.tiLe);
+      await napAnh(v, url); veMau(i); ttMau(i, "Đã sửa xong.");
+    } catch(e){ ttMau(i, "Lỗi: " + loiThanThien(e)); }
+    nut.disabled = false;
+  }
+}
+
+function taiAnh(i){
+  const cv = $("cv"+i); if (!cv || !boHienTai[i] || !boHienTai[i].img) return;
+  const ten = `${(cd.tenTiem||"anh").replace(/\s+/g,"-")}-${new Date().toISOString().slice(0,10)}-mau${i+1}.jpg`;
+  cv.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (iOS){ window.open(url, "_blank"); ttMau(i, "Ảnh mở ở tab mới: nhấn giữ ảnh, chọn Lưu vào Ảnh."); }
+    else { const a = document.createElement("a"); a.href = url; a.download = ten; document.body.appendChild(a); a.click(); a.remove(); ttMau(i, "Đã tải ảnh về máy."); }
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  }, "image/jpeg", .92);
+}
+
+function ttMau(i, s){ const t = $("tt"+i); if (t) t.textContent = s; }
+function baoTrangThai(s){ $("trangthai").textContent = s; }
+function napAnh(v, url){
+  return new Promise(ok => { const im = new Image(); im.onload = () => { v.img = im; v.anhGoc = url; ok(); }; im.onerror = () => ok(); im.src = url; });
+}
+
+async function taoAnhMau(i, ghiChu){
+  const v = boHienTai[i];
+  const nutTL = $("the"+i).querySelector('[data-viec="taoLai"]'); nutTL.disabled = true;
+  ttMau(i, "Đang tạo ảnh...");
+  try {
+    const parts = [];
+    if (v.coChuTiem && chanDung) parts.push({inlineData:{mimeType:chanDung.mime, data:chanDung.data}});
+    if (thamKhao) parts.push({inlineData:{mimeType:thamKhao.mime, data:thamKhao.data}});
+    parts.push({text: promptAnh(v, v.tiLe, v.cheDo, [lanTaoCuoi.yeuCau, ghiChu].filter(Boolean).join(". "))});
+    const url = await taoAnh(parts, v.tiLe);
+    await napAnh(v, url); veMau(i); $("the"+i).querySelector('[data-viec="tai"]').disabled = false; ttMau(i, v.cheDo === "ai" ? "Xong. Soát kỹ dấu tiếng Việt trước khi đăng." : "Xong. Sửa chữ ở mục bên dưới nếu cần.");
+  } catch(e){ ttMau(i, "Lỗi: " + loiThanThien(e)); }
+  nutTL.disabled = false;
+}
+
+/* ---------- Tạo bộ 3 ảnh ---------- */
+async function taoBo(gopY){
+  docCaiDat();
+  const noiDung = $("noiDung").value.trim();
+  if (!layKey()){ $("caiDat").classList.remove("an"); baoTrangThai("Chưa có API key. Dán key vào Cài đặt rồi lưu."); return; }
+  if (!noiDung){ baoTrangThai("Nhập nội dung cần làm ảnh trước."); return; }
+  const tiLe = $("tiLe").value, cheDo = $("cheDoChu").value, loai = $("loai").selectedOptions[0].text;
+  const yeuCau = $("yeuCau").value.trim();
+  const coChuTiem = $("coChuTiem").checked && !!chanDung;
+  lanTaoCuoi = {tiLe, cheDo, yeuCau};
+  $("nutTao").disabled = $("nutTaoLai").disabled = true;
+  baoTrangThai("Đang lên ý tưởng 3 mẫu...");
+  try {
+    const nd = `Thông tin tiệm: tên "${cd.tenTiem||"(chưa có)"}"; khẩu hiệu "${cd.slogan||""}"; Zalo "${cd.sdt||""}"; địa chỉ "${cd.diaChi||""}"; giờ mở cửa "${cd.gio||""}".
+Điều tiệm không thích: ${cd.khongThich||"không có"}.
+Loại ảnh: ${loai}. Khổ: ${tiLe}.
+${coChuTiem ? "CÓ ẢNH THẬT CHỦ TIỆM (một phụ nữ): cả 3 phương án đặt chủ tiệm làm chủ thể trong canh_anh, mô tả bằng 'the spa owner' (không mô tả nét mặt), mỗi phương án một tư thế khác: đứng tư vấn trong phòng trị liệu, cầm khay thảo dược, đang massage vai gáy cho khách. Chừa vùng chữ đúng bo_cuc, không để mặt chủ tiệm nằm trong vùng chữ." : "Không có ảnh chủ tiệm: không đặt khuôn mặt người làm chủ thể chính."}
+NỘI DUNG CẦN LÀM ẢNH: ${noiDung}
+${yeuCau ? "Yêu cầu thêm: " + yeuCau : ""}
+${gopY ? "GÓP Ý CHO BỘ TRƯỚC (sửa theo góp ý, giữ nguyên dữ kiện): " + gopY + "\nBộ trước: " + JSON.stringify(boHienTai.map(b=>({ten_huong:b.ten_huong,bo_cuc:b.bo_cuc,tieu_de:b.tieu_de}))) : ""}`;
+    const kq = await taoChu(HE_THONG, nd);
+    const ds = (kq.bien_the || []).slice(0,3);
+    if (ds.length < 3) throw new Error("Không nhận đủ 3 phương án, bấm tạo lại.");
+    boHienTai = ds.map(b => Object.assign(b, {tiLe, cheDo, coChuTiem, y_chinh: Array.isArray(b.y_chinh) ? b.y_chinh : []}));
+    const kq3 = $("ketqua"); kq3.innerHTML = "";
+    boHienTai.forEach((v,i) => { kq3.appendChild(veThe(i)); veMau(i); });
+    $("dieuChinhBo").classList.remove("an");
+    baoTrangThai("Đang vẽ 3 ảnh, mất khoảng 20 đến 60 giây...");
+    await Promise.all(boHienTai.map((v,i) => taoAnhMau(i, "")));
+    baoTrangThai("Xong 3 mẫu. Chọn mẫu ưng ý, sửa chữ hoặc sửa ảnh ngay trên từng mẫu.");
+    kq3.scrollIntoView({behavior:"smooth"});
+  } catch(e){ baoTrangThai("Lỗi: " + loiThanThien(e)); }
+  $("nutTao").disabled = $("nutTaoLai").disabled = false;
+}
+
+/* ---------- Gắn sự kiện ---------- */
+$("moCaiDat").onclick = () => $("caiDat").classList.toggle("an");
+$("luuCaiDat").onclick = luuCaiDat;
+$("logo").onchange = async e => { const f = e.target.files[0]; if (!f) return; const u = await docFile(f, 400); ghiLuu("dsLogo", u); datLogo(u); };
+$("xoaLogo").onclick = () => { logoImg = null; ghiLuu("dsLogo",""); $("logoXem").classList.add("an"); boHienTai.forEach((v,i)=>veMau(i)); };
+$("anhThamKhao").onchange = async e => {
+  const f = e.target.files[0]; if (!f){ thamKhao = null; return; }
+  const u = await docFile(f, 1280); thamKhao = Object.assign(tachDataUrl(u), {vaiTro: $("vaiTroAnh").value});
+};
+$("vaiTroAnh").onchange = () => { if (thamKhao) thamKhao.vaiTro = $("vaiTroAnh").value; };
+$("chanDung").onchange = async e => { const f = e.target.files[0]; if (!f) return; const u = await docFile(f, 1024); ghiLuu("dsChanDung", u); datChanDung(u); };
+$("xoaChanDung").onclick = () => { ghiLuu("dsChanDung",""); datChanDung(""); };
+$("coChuTiem").onchange = () => { if ($("coChuTiem").checked && !chanDung){ $("coChuTiem").checked = false; $("caiDat").classList.remove("an"); baoTrangThai("Thêm ảnh chân dung chủ tiệm trong Cài đặt trước."); } };
+$("taiCa3").onclick = () => boHienTai.forEach((v,i) => setTimeout(()=>taiAnh(i), i*700));
+$("boMau").onchange = () => {
+  const v = $("boMau").value; if (!v) return;
+  const [n,c,p,nh] = v.split(",");
+  $("mauNen").value = n; $("mauChinh").value = c; $("mauPhu").value = p; $("mauNhan").value = nh;
+};
+$("nutTao").onclick = () => taoBo("");
+$("nutTaoLai").onclick = () => { const g = $("gopY").value.trim(); if (!g){ baoTrangThai("Nhập góp ý cho cả bộ trước."); return; } taoBo(g); };
+
+napCaiDat();
+if (document.fonts){
+  Promise.all([document.fonts.load('700 40px Lora'), document.fonts.load('400 20px "Be Vietnam Pro"'), document.fonts.load('700 20px "Be Vietnam Pro"')])
+    .then(()=>boHienTai.forEach((v,i)=>veMau(i))).catch(()=>{});
+}
+</script>
+</body>
+</html>

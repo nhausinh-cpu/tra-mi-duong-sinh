@@ -162,9 +162,9 @@ input[type=color]{height:42px;padding:3px}
 </main>
 
 <script>
-const API = "https://generativelanguage.googleapis.com/v1beta/models/";
-const MO_HINH_CHU_MD = "gemini-3.8-flash, gemini-3-flash, gemini-2.5-flash";
-const MO_HINH_ANH_MD = "gemini-3.1-flash-image, gemini-3.1-flash-image-preview, gemini-3-pro-image, gemini-2.5-flash-image";
+const MO_HINH_CHU_MD = "gemini-3.8-flash, gemini-3-flash";
+const MO_HINH_ANH_MD = "gemini-3.1-flash-image, gemini-3-pro-image, gemini-3.1-flash-lite-image";
+const PHIEN_BAN_MO_HINH = "2026-10b";
 const $ = id => document.getElementById(id);
 const O_CAI_DAT = ["apiKey","tenTiem","slogan","sdt","gio","diaChi","mauChinh","mauPhu","mauNen","mauNhan","khongThich","moHinhChu","moHinhAnh"];
 
@@ -191,6 +191,8 @@ function napCaiDat(){
   let luu = {};
   try { luu = JSON.parse(docLuu("dsCaiDat") || "{}"); } catch(e){}
   O_CAI_DAT.forEach(k => { if (luu[k] !== undefined) $(k).value = luu[k]; });
+  // danh sách mô hình cũ đã lưu thì thay bằng danh sách mới
+  if (luu.phienBanMoHinh !== PHIEN_BAN_MO_HINH){ $("moHinhChu").value = MO_HINH_CHU_MD; $("moHinhAnh").value = MO_HINH_ANH_MD; }
   if (!$("moHinhChu").value) $("moHinhChu").value = MO_HINH_CHU_MD;
   if (!$("moHinhAnh").value) $("moHinhAnh").value = MO_HINH_ANH_MD;
   if (!$("tenTiem").value) $("tenTiem").value = "Mini home spa";
@@ -205,7 +207,7 @@ function napCaiDat(){
 function docCaiDat(){ O_CAI_DAT.forEach(k => cd[k] = $(k).value.trim()); }
 function luuCaiDat(){
   docCaiDat();
-  ghiLuu("dsCaiDat", JSON.stringify(cd));
+  ghiLuu("dsCaiDat", JSON.stringify(Object.assign({phienBanMoHinh:PHIEN_BAN_MO_HINH}, cd)));
   moHinhAnhDung = kieuCauHinhDung = moHinhChuDung = null;
   baoTrangThai("Đã lưu cài đặt.");
   $("caiDat").classList.add("an");
@@ -244,74 +246,159 @@ function docFile(file, maxCanh){
 }
 function tachDataUrl(u){ const m = u.match(/^data:(.*?);base64,(.*)$/); return {mime:m[1], data:m[2]}; }
 
-/* ---------- Gọi Gemini ---------- */
-async function goiGemini(moHinh, than){
+/* ---------- Gọi Gemini: ưu tiên Interactions API mới, dự phòng generateContent ---------- */
+const GOC = "https://generativelanguage.googleapis.com/v1beta/";
+let dungAPIcu = false;   // true nếu tài khoản không dùng được Interactions API
+
+function loiTuPhanHoi(r, j, moHinh){
+  const e = new Error((j.error && j.error.message) || ("Lỗi " + r.status + " từ " + moHinh));
+  e.status = r.status; return e;
+}
+async function guiJSON(url, than, moHinh){
   const key = layKey();
   if (!key) throw new Error("Chưa có API key. Bấm ⚙ Cài đặt để dán key.");
-  const r = await fetch(API + moHinh + ":generateContent", {
-    method:"POST",
+  const r = await fetch(url, {
+    method: than ? "POST" : "GET",
     headers:{"Content-Type":"application/json","x-goog-api-key":key},
-    body:JSON.stringify(than)
+    body: than ? JSON.stringify(than) : undefined
   });
-  const j = await r.json().catch(()=>({}));
-  if (!r.ok){
-    const e = new Error((j.error && j.error.message) || ("Lỗi " + r.status));
-    e.status = r.status; throw e;
-  }
+  const raw = await r.text().catch(()=> "");
+  let j = {};
+  try { j = raw ? JSON.parse(raw) : {}; } catch(e){ j = {}; }
+  if (!r.ok) throw loiTuPhanHoi(r, j, moHinh);
+  if (!raw) throw Object.assign(new Error("Máy chủ trả phản hồi rỗng (" + moHinh + ")"), {status:0, rong:true});
   return j;
 }
-function loiKhongCoMoHinh(e){ return e.status === 404 || /not found|not supported|is not available/i.test(e.message); }
-function loiCauHinh(e){ return e.status === 400 && /unknown name|invalid json|cannot find field|imageConfig|responseFormat|aspect/i.test(e.message); }
+const ngu = ms => new Promise(ok => setTimeout(ok, ms));
+
+/* Gọi Interactions API, chờ xong nếu máy chủ trả trạng thái đang xử lý */
+async function goiTuongTac(than){
+  let j = await guiJSON(GOC + "interactions", than, than.model);
+  const batDau = Date.now();
+  while (j.status && /progress|pending|queued|running/i.test(j.status) && j.id && Date.now() - batDau < 120000){
+    await ngu(2500);
+    j = await guiJSON(GOC + "interactions/" + j.id, null, than.model);
+  }
+  if (j.status && /fail|error|cancel/i.test(j.status)) throw Object.assign(new Error("Tạo thất bại (" + j.status + ")"), {status:0, rong:true});
+  return j;
+}
+/* Gom nội dung trả về từ Interactions: {text, anh:[{mime,data}]} */
+function gomKetQua(j){
+  const ra = {text:"", anh:[]};
+  const cacBuoc = j.steps || j.outputs || j.output || [];
+  const xuLy = c => {
+    if (!c) return;
+    if (Array.isArray(c)) return c.forEach(xuLy);
+    if (c.type === "thought" || c.thought) return;
+    if (c.content) return xuLy(c.content);
+    if ((c.type === "image" || c.mime_type || c.mimeType) && c.data) ra.anh.push({mime:c.mime_type || c.mimeType || "image/png", data:c.data});
+    else if (typeof c.text === "string") ra.text += c.text;
+  };
+  (Array.isArray(cacBuoc) ? cacBuoc : [cacBuoc]).forEach(b => { if (!b.type || /output|model/i.test(b.type) || b.content) xuLy(b.content || b); });
+  if (!ra.text && typeof j.output_text === "string") ra.text = j.output_text;
+  return ra;
+}
+/* Đổi phần nội dung dạng cũ sang dạng Interactions */
+function sangInput(parts){
+  return parts.map(p => p.inlineData ? {type:"image", mime_type:p.inlineData.mimeType, data:p.inlineData.data} : {type:"text", text:p.text});
+}
+
+/* Dự phòng: API generateContent cũ */
+async function goiGemini(moHinh, than){
+  const j = await guiJSON(GOC + "models/" + moHinh + ":generateContent", than, moHinh);
+  if (!j.candidates && !j.promptFeedback) throw Object.assign(new Error("Máy chủ trả phản hồi rỗng (" + moHinh + ")"), {status:0, rong:true});
+  return j;
+}
+function loiAPIMoiKhongCo(e){ return e.status === 404 && !/model/i.test(e.message); }
+function loiKhongCoMoHinh(e){ return (e.status === 404 && /model/i.test(e.message)) || /not found|not supported|not available|no longer available|deprecated/i.test(e.message); }
+function loiCauHinh(e){ return e.status === 400 && /unknown name|invalid json|cannot find field|response_format|responseFormat|imageConfig|aspect|mime|schema|generation_config|unrecognized/i.test(e.message); }
 function loiThanThien(e){
   if (e.status === 429) return "Đã hết lượt gọi miễn phí trong lúc này. Đợi 1 phút rồi thử lại, hoặc bật thanh toán cho key.";
-  if (e.status === 403 || /API key/i.test(e.message)) return "API key không hợp lệ hoặc chưa bật Gemini API. Kiểm tra lại key trong Cài đặt.";
+  if (e.status === 403 || e.status === 401 || /API key/i.test(e.message)) return "API key không hợp lệ hoặc chưa bật Gemini API. Kiểm tra lại key trong Cài đặt.";
+  if (e.rong || e instanceof SyntaxError) return e.message + ". Bấm tạo lại; nếu vẫn lỗi, gửi ảnh chụp lỗi này để chỉnh.";
   return e.message;
 }
 function danhSach(s){ return s.split(",").map(x=>x.trim()).filter(Boolean); }
+function tachJSON(t){
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if (a < 0 || b <= a) throw Object.assign(new Error("Mô hình không trả đúng định dạng"), {status:0, rong:true});
+  return JSON.parse(t.slice(a, b+1));
+}
+function xepThuTu(ds, uuTien){ return uuTien ? [uuTien, ...ds.filter(x => x !== uuTien)] : ds; }
 
 async function taoChu(heThong, nguoiDung){
-  const ds = moHinhChuDung ? [moHinhChuDung] : danhSach(cd.moHinhChu || MO_HINH_CHU_MD);
+  const ds = xepThuTu(danhSach(cd.moHinhChu || MO_HINH_CHU_MD), moHinhChuDung);
   let loiCuoi;
   for (const mh of ds){
-    try {
-      const j = await goiGemini(mh, {
-        systemInstruction:{parts:[{text:heThong}]},
-        contents:[{role:"user",parts:[{text:nguoiDung}]}],
-        generationConfig:{responseMimeType:"application/json", temperature:1}
-      });
-      moHinhChuDung = mh;
-      const t = (j.candidates?.[0]?.content?.parts || []).map(p=>p.text||"").join("");
-      return JSON.parse(t.replace(/^```json\s*|```$/g,""));
-    } catch(e){ loiCuoi = e; if (!loiKhongCoMoHinh(e)) throw e; }
+    // 4 cách thử: mới có định dạng JSON, mới không định dạng, cũ có JSON, cũ không JSON
+    const cach = dungAPIcu ? ["cu-json","cu"] : ["moi-json","moi","cu-json","cu"];
+    for (const k of cach){
+      try {
+        const nhacJSON = k.endsWith("json") ? "" : "\n\nChỉ trả về JSON, không viết gì thêm.";
+        let t = "";
+        if (k.startsWith("moi")){
+          const than = {model:mh, system_instruction:heThong, input:nguoiDung + nhacJSON, generation_config:{temperature:1}};
+          if (k === "moi-json") than.response_format = {type:"text", mime_type:"application/json"};
+          t = gomKetQua(await goiTuongTac(than)).text;
+        } else {
+          const j = await goiGemini(mh, {
+            systemInstruction:{parts:[{text:heThong}]},
+            contents:[{role:"user",parts:[{text:nguoiDung + nhacJSON}]}],
+            generationConfig: k === "cu-json" ? {responseMimeType:"application/json", temperature:1} : {temperature:1}
+          });
+          t = (j.candidates?.[0]?.content?.parts || []).filter(p=>!p.thought).map(p=>p.text||"").join("");
+        }
+        if (!t.trim()) throw Object.assign(new Error("Mô hình " + mh + " trả rỗng"), {status:0, rong:true});
+        const kq = tachJSON(t);
+        moHinhChuDung = mh;
+        return kq;
+      } catch(e){
+        loiCuoi = e;
+        if (e.status === 429 || e.status === 403 || e.status === 401) throw e;
+        if (k.startsWith("moi") && loiAPIMoiKhongCo(e)){ dungAPIcu = true; continue; }
+        if (loiKhongCoMoHinh(e)) break;
+        if (e.rong || e instanceof SyntaxError || loiCauHinh(e) || e.status === 400) continue;
+        throw e;
+      }
+    }
   }
   throw loiCuoi;
 }
 
-const KIEU_CAU_HINH = [
-  tl => ({responseModalities:["TEXT","IMAGE"], imageConfig:{aspectRatio:tl}}),
-  tl => ({responseModalities:["TEXT","IMAGE"], responseFormat:{image:{aspectRatio:tl}}}),
-  tl => ({responseModalities:["TEXT","IMAGE"]})
-];
 async function taoAnh(parts, tiLe){
-  const dsMH = moHinhAnhDung ? [moHinhAnhDung] : danhSach(cd.moHinhAnh || MO_HINH_ANH_MD);
+  const ds = xepThuTu(danhSach(cd.moHinhAnh || MO_HINH_ANH_MD), moHinhAnhDung);
   let loiCuoi;
-  for (const mh of dsMH){
-    const dsKieu = kieuCauHinhDung !== null ? [kieuCauHinhDung] : [0,1,2];
-    for (const k of dsKieu){
+  for (const mh of ds){
+    const cach = dungAPIcu ? ["cu-tl","cu-ttl","cu"] : ["moi-tl","moi","cu-tl","cu-ttl","cu"];
+    const cachThu = kieuCauHinhDung && moHinhAnhDung === mh ? [kieuCauHinhDung, ...cach.filter(x=>x!==kieuCauHinhDung)] : cach;
+    for (const k of cachThu){
       try {
-        const j = await goiGemini(mh, {contents:[{role:"user",parts}], generationConfig:KIEU_CAU_HINH[k](tiLe)});
-        const p = (j.candidates?.[0]?.content?.parts || []).find(x => x.inlineData || x.inline_data);
-        if (!p){
-          const ly = j.candidates?.[0]?.finishReason || j.promptFeedback?.blockReason || "không rõ";
-          throw Object.assign(new Error("Mô hình không trả ảnh (" + ly + "). Thử đổi nội dung hoặc bấm tạo lại."), {status:0});
+        let anh = null;
+        if (k.startsWith("moi")){
+          const than = {model:mh, input:sangInput(parts), response_format:{type:"image"}};
+          if (k === "moi-tl") than.response_format.aspect_ratio = tiLe;
+          const kq = gomKetQua(await goiTuongTac(than));
+          anh = kq.anh[0];
+          if (!anh) throw Object.assign(new Error("Mô hình " + mh + " không trả ảnh. Thử đổi nội dung hoặc bấm tạo lại."), {status:0, rong:true});
+        } else {
+          const cfg = {responseModalities:["TEXT","IMAGE"]};
+          if (k === "cu-tl") cfg.imageConfig = {aspectRatio:tiLe};
+          if (k === "cu-ttl") cfg.responseFormat = {image:{aspectRatio:tiLe}};
+          const j = await goiGemini(mh, {contents:[{role:"user",parts}], generationConfig:cfg});
+          const p = (j.candidates?.[0]?.content?.parts || []).find(x => x.inlineData || x.inline_data);
+          if (!p) throw Object.assign(new Error("Mô hình " + mh + " không trả ảnh (" + (j.candidates?.[0]?.finishReason || j.promptFeedback?.blockReason || "không rõ") + ")."), {status:0, rong:true});
+          const d = p.inlineData || p.inline_data;
+          anh = {mime:d.mimeType || d.mime_type || "image/png", data:d.data};
         }
         moHinhAnhDung = mh; kieuCauHinhDung = k;
-        const d = p.inlineData || p.inline_data;
-        return "data:" + (d.mimeType || d.mime_type || "image/png") + ";base64," + d.data;
+        return "data:" + anh.mime + ";base64," + anh.data;
       } catch(e){
         loiCuoi = e;
-        if (loiCauHinh(e)) continue;
+        if (e.status === 429 || e.status === 403 || e.status === 401) throw e;
+        if (k.startsWith("moi") && loiAPIMoiKhongCo(e)){ dungAPIcu = true; continue; }
         if (loiKhongCoMoHinh(e)) break;
+        if (loiCauHinh(e) || e.status === 400) continue;
+        if (e.rong) break;
         throw e;
       }
     }
